@@ -1,0 +1,22 @@
+from textnode import TextNode, TextType
+from htmlnode import LeafNode
+
+def text_node_to_html_node(text_node):
+
+    if text_node.text_type is TextType.TEXT:
+        return LeafNode(tag=None, value=text_node.text)
+    
+    if text_node.text_type is TextType.BOLD:
+        return LeafNode(tag="b", value=text_node.text)
+    
+    if text_node.text_type is TextType.ITALIC:
+        return LeafNode(tag="i", value=text_node.text)
+    
+    if text_node.text_type is TextType.CODE:
+        return LeafNode(tag="code", value=text_node.text)
+
+    if text_node.text_type is TextType.LINKS:
+        return LeafNode(tag="a", value=text_node.text, props={"href": "https://www.google.com"})
+
+    if text_node.text_type is TextType.IMAGES:
+        return LeafNode(tag="img", value="", props={"src": "https://example.com/img.png", "alt": "Alt text"})
