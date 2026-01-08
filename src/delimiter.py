@@ -9,7 +9,8 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
             result.append(old_node)
             continue
         if delimiter not in old_node.text:
-            raise ValueError("delimiter not found")
+            result.append(old_node)
+            continue
         d = re.escape(delimiter)
         text_list = re.split(fr"({d}(?:(?!{d}).)*{d})", old_node.text)
     

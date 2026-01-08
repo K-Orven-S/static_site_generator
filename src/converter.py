@@ -1,5 +1,6 @@
 from textnode import TextNode, TextType
 from htmlnode import LeafNode
+from delimiter import *
 
 def text_node_to_html_node(text_node):
 
@@ -20,3 +21,16 @@ def text_node_to_html_node(text_node):
 
     if text_node.text_type is TextType.IMAGES:
         return LeafNode(tag="img", value="", props={"src": "https://example.com/img.png", "alt": "Alt text"})
+
+def text_to_textnodes(text):
+    nodes = [TextNode(text, TextType.TEXT)]
+
+    nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
+    nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC) 
+    nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+
+
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
+
+    return nodes
