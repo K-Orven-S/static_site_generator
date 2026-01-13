@@ -3,130 +3,102 @@ from textnode import TextNode, TextType
 from delimiter import *
 from extract import extract_markdown_images
 from converter import *
+from blocks import *
 
-class TestTextToTextNodes(unittest.TestCase):
-    def test_plain_text(self):
-        text = "Just plain text."
-        self.assertEqual(
-            text_to_textnodes(text),
-            [TextNode("Just plain text.", TextType.TEXT)],
-        )
+class TestBlockToBlockType(unittest.TestCase):
+    # -------- CODE --------
+    def test_code_block_basic(self):
+        block = "```\nprint('hi')\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
 
-    def test_bold_only(self):
-        text = "This is **bold** text"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("This is ", TextType.TEXT),
-                TextNode("bold", TextType.BOLD),
-                TextNode(" text", TextType.TEXT),
-            ],
-        )
+    def test_code_block_with_hashes_not_heading(self):
+        block = "```\n# not a heading inside code\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
 
-    def test_italic_only_underscore(self):
-        text = "This is _italic_ text"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("This is ", TextType.TEXT),
-                TextNode("italic", TextType.ITALIC),
-                TextNode(" text", TextType.TEXT),
-            ],
-        )
+    def test_code_block_with_list_markers_not_list(self):
+        block = "```\n- not a list inside code\n1. not ordered inside code\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
 
-    def test_code_only(self):
-        text = "This is `code` here"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("This is ", TextType.TEXT),
-                TextNode("code", TextType.CODE),
-                TextNode(" here", TextType.TEXT),
-            ],
-        )
+    # -------- HEADING --------
+    def test_heading_level_1(self):
+        block = "# Title"
+        self.assertEqual(block_to_block_type(block), BlockType.HEADING)
 
-    def test_single_image(self):
-        text = "Hello ![cat](cat.png) world"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("Hello ", TextType.TEXT),
-                TextNode("cat", TextType.IMAGES, "cat.png"),
-                TextNode(" world", TextType.TEXT),
-            ],
-        )
+    def test_heading_level_6(self):
+        block = "###### Title"
+        self.assertEqual(block_to_block_type(block), BlockType.HEADING)
 
-    def test_single_link(self):
-        text = "Go to [boot](https://www.boot.dev) now"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("Go to ", TextType.TEXT),
-                TextNode("boot", TextType.LINKS, "https://www.boot.dev"),
-                TextNode(" now", TextType.TEXT),
-            ],
-        )
+    def test_heading_reject_too_many_hashes(self):
+        block = "####### Too many"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
 
-    def test_image_not_treated_as_link(self):
-        text = "An image ![cat](cat.png) and a [site](x)"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("An image ", TextType.TEXT),
-                TextNode("cat", TextType.IMAGES, "cat.png"),
-                TextNode(" and a ", TextType.TEXT),
-                TextNode("site", TextType.LINKS, "x"),
-            ],
-        )
+    def test_heading_reject_no_space(self):
+        block = "###NoSpace"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
 
-    def test_all_features_mixed(self):
-        text = (
-            "This is **text** with an _italic_ word and a `code block` "
-            "and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) "
-            "and a [link](https://boot.dev)"
-        )
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("This is ", TextType.TEXT),
-                TextNode("text", TextType.BOLD),
-                TextNode(" with an ", TextType.TEXT),
-                TextNode("italic", TextType.ITALIC),
-                TextNode(" word and a ", TextType.TEXT),
-                TextNode("code block", TextType.CODE),
-                TextNode(" and an ", TextType.TEXT),
-                TextNode("obi wan image", TextType.IMAGES, "https://i.imgur.com/fJRm4Vk.jpeg"),
-                TextNode(" and a ", TextType.TEXT),
-                TextNode("link", TextType.LINKS, "https://boot.dev"),
-            ],
-        )
+    def test_heading_reject_only_hashes(self):
+        block = "###"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
 
-    def test_adjacent_links(self):
-        text = "[a](x)[b](y)"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("a", TextType.LINKS, "x"),
-                TextNode("b", TextType.LINKS, "y"),
-            ],
-        )
+    # -------- QUOTE --------
+    def test_quote_single_line(self):
+        block = "> hello"
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
 
-    def test_adjacent_images(self):
-        text = "![a](x)![b](y)"
-        self.assertEqual(
-            text_to_textnodes(text),
-            [
-                TextNode("a", TextType.IMAGES, "x"),
-                TextNode("b", TextType.IMAGES, "y"),
-            ],
-        )
+    def test_quote_multi_line(self):
+        block = "> hello\n> there\n> friend"
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
 
+    def test_quote_reject_if_one_line_missing_prefix(self):
+        block = "> good\nbad"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
 
-if __name__ == "__main__":
-    unittest.main()
+    # -------- UNORDERED LIST --------
+    def test_unordered_list_single_line(self):
+        block = "- one"
+        self.assertEqual(block_to_block_type(block), BlockType.UNORDERED_LIST)
 
+    def test_unordered_list_multi_line(self):
+        block = "- one\n- two\n- three"
+        self.assertEqual(block_to_block_type(block), BlockType.UNORDERED_LIST)
 
+    def test_unordered_list_reject_if_one_line_missing_prefix(self):
+        block = "- one\ntwo"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
 
+    # -------- ORDERED LIST --------
+    def test_ordered_list_single_line(self):
+        block = "1. one"
+        self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
+
+    def test_ordered_list_multi_line(self):
+        block = "1. one\n2. two\n3. three"
+        self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
+
+    def test_ordered_list_reject_if_starts_not_one(self):
+        block = "2. two\n3. three"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_ordered_list_reject_if_not_incrementing(self):
+        block = "1. one\n3. three"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_ordered_list_reject_if_missing_space_after_dot(self):
+        block = "1.one\n2. two"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_ordered_list_reject_if_one_line_wrong_prefix(self):
+        block = "1. one\n2. two\n- three"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    # -------- PARAGRAPH DEFAULT --------
+    def test_paragraph_basic(self):
+        block = "This is just a normal paragraph."
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_paragraph_multi_line_text(self):
+        block = "This is a paragraph\nthat spans multiple lines"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
 
 
 if __name__ == "__main__":
