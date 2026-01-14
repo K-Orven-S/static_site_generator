@@ -56,17 +56,19 @@ def generate_pages_recursive(
         if not entry.endswith(".md"):
             continue
 
-        rel_md_path = os.path.relpath(from_path, content_root)      # e.g. blog/tom.md
-        rel_no_ext = os.path.splitext(rel_md_path)[0]               # e.g. blog/tom
+        rel_md_path = os.path.relpath(from_path, content_root)      # e.g. contact.md
+        rel_no_ext = os.path.splitext(rel_md_path)[0]              # e.g. contact
 
-        # ✅ clean URL output
         if rel_no_ext.endswith("index"):
             # content/index.md -> docs/index.html
             dest_path = os.path.join(dest_dir_path, rel_no_ext + ".html")
+            generate_page(from_path, template_path, dest_path, basepath)
         else:
-            # content/contact.md -> docs/contact/index.html
-            # content/blog/tom.md -> docs/blog/tom/index.html
-            dest_path = os.path.join(dest_dir_path, rel_no_ext, "index.html")
+            # 1) content/contact.md -> docs/contact/index.html
+            dest_index = os.path.join(dest_dir_path, rel_no_ext, "index.html")
+            generate_page(from_path, template_path, dest_index, basepath)
 
-        generate_page(from_path, template_path, dest_path, basepath)
+            # 2) ALSO write a no-extension file so /contact works
+            dest_no_ext = os.path.join(dest_dir_path, rel_no_ext)
+            generate_page(from_path, template_path, dest_no_ext, basepath)
 
