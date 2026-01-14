@@ -22,7 +22,7 @@ def block_to_block_type(block):
         if 1 <= i <= 6 and i < len(block) and block[i] == " ":
             return BlockType.HEADING
     
-    if all(line.startswith("> ") for line in lines):
+    if all(line.strip().startswith(">") for line in lines if line.strip() != ""):
         return BlockType.QUOTE
 
     if all(line.startswith("- ") for line in lines):

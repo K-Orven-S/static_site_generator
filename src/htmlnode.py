@@ -78,7 +78,7 @@ class LeafNode(HTMLNode):
             return f"<{self.tag}>{self.value}</{self.tag}>"
 
 class ParentNode(HTMLNode):
-    def __init__(self, tag, value, children, props=None):
+    def __init__(self, tag, children, props=None):
         super().__init__(tag=tag, value=None, children=children, props=props)
 
         self.tag = tag
@@ -96,7 +96,7 @@ class ParentNode(HTMLNode):
         opening_tag = f"<{self.tag}>"
         closing_tag = f"</{self.tag}>"
 
-        for child in children:
+        for child in self.children:
             opening_tag += child.to_html()
         
         return opening_tag + closing_tag
